@@ -2,12 +2,65 @@
 #include <GLFW/glfw3.h>
 
 #include <iostream>
+#include <fstream>
 #include <string>
+#include <sstream>
+
+struct ShaderProgramSource
+{
+    std::string vertexSource;
+    std::string fragmentSource;
+};
+
+static ShaderProgramSource ParseShader(const std::string& filepath)
+{
+    // 파일 불러오기
+    std::ifstream stream(filepath);
+
+    // 셰이더 타입을 저장합니다.
+    enum class ShaderType
+    {
+        NONE = -1,
+        VERTEX = 0,
+        FRAGMENT = 1
+    };
+
+    std::string line;
+    std::stringstream ss[2];
+    ShaderType type = ShaderType::NONE;
+    while (getline(stream, line))
+    {
+        if (line.find("#shader") != std::string::npos)
+        {
+            if (line.find("vertex") != std::string::npos)
+            {
+                // 정점 셰이더임을 저장합니다.
+                type = ShaderType::VERTEX;
+            }
+            else if (line.find("fragment") != std::string::npos)
+            {
+                // 프레그먼트 셰이더임을 저장합니다.
+                type = ShaderType::FRAGMENT;
+            }
+        }
+        else
+        {
+            // 문자열 스트림에 저장한다.
+            ss[(int)type] << line << '\n';
+        }
+    }
+    
+    // 셰이더 객체를 반환합니다.
+    return { ss[0].str(), ss[1].str() };
+}
 
 static unsigned int CompileShader(unsigned int shaderType, const std::string& source)
 {
+    // 셰이더를 타입에 따라서 만듭니다.
     unsigned int id = glCreateShader(shaderType);
     const char* src = source.c_str();               // &source[0]
+
+    // 셰이더 소스를 id에 적용하고 이를 컴파일합니다.
     glShaderSource(id, 1, &src, nullptr);
     glCompileShader(id);
 
@@ -15,6 +68,7 @@ static unsigned int CompileShader(unsigned int shaderType, const std::string& so
     int result;
     glGetShaderiv(id, GL_COMPILE_STATUS, &result);
 
+    // 만약 컴파일이 실패한다면 에러 로그를 출력 후 0을 반환합니다.
     if (result == GL_FALSE)
     {
         int length;
@@ -31,6 +85,7 @@ static unsigned int CompileShader(unsigned int shaderType, const std::string& so
         return 0;
     }
 
+    // 셰이더 아이디값을 반환합니다.
     return id;
 }
 
@@ -110,27 +165,13 @@ int main(void)
     */
     glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(float) * 3, 0);
 
-    std::string vertexShader = 
-        "#version 430 core\n"
-        "\n"
-        "layout(location = 0) in vec4 position;\n"
-        "\n"
-        "void main()\n"
-        "{\n"
-        "   gl_Position = position;\n"
-        "}\n";
+    // 셰이더 파일을 불러옵니다.
+    ShaderProgramSource source = ParseShader("./Basic.shader");
+    std::cout << source.vertexSource << std::endl;
+    std::cout << source.fragmentSource << std::endl;
 
-    std::string fragmentShader =
-        "#version 430 core\n"
-        "\n"
-        "layout(location = 0) out vec4 color;\n"
-        "\n"
-        "void main()\n"
-        "{\n"
-        "   color = vec4(1.0, 0.0, 0.0, 1.0);\n"
-        "}\n";
-
-    unsigned int shader = CreateShader(vertexShader, fragmentShader);
+    // 셰이더를 적용하고 사용 선언합니다.
+    unsigned int shader = CreateShader(source.vertexSource, source.fragmentSource);
     glUseProgram(shader);
 
     // 이 데이터들을 어떻게 그릴 것인가에 대해 쓰는 것이 바로 shader이다.
