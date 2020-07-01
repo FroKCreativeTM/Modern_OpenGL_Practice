@@ -6,11 +6,36 @@
 #include <string>
 #include <sstream>
 
+// 디버깅 시 이 에러에 브레이킹 포인트를 걸어준다.
+#define ASSERT(x) if (!(x)) __debugbreak();
+// 디버깅용 매크로
+#define GLCall(x) GLClearError();\
+    x;\
+    ASSERT(GLLogCall(#x, __FILE__, __LINE__))
+
+/* 셰이더 종류마다 저장할 각 셰이더 소스 클래스입니다. */
 struct ShaderProgramSource
 {
     std::string vertexSource;
     std::string fragmentSource;
 };
+
+static void GLClearError()
+{
+    while (glGetError() != GL_NO_ERROR);
+}
+
+static bool GLLogCall(const char* function, const char* file, int line)
+{
+    // C++17 문법입니다.
+    while (GLenum error = glGetError())
+    {
+        std::cout << "[OpenGL Error] (" << error << ")" << function
+            << " " << file << " : " << line << std::endl;
+        return false;
+    }
+    return true;
+}
 
 static ShaderProgramSource ParseShader(const std::string& filepath)
 {
@@ -134,24 +159,48 @@ int main(void)
 
     std::cout << glGetString(GL_VERSION) << std::endl;
 
-    float positions[9] = {
-        -0.5f, -0.5f, 0.0f,
-        0.0f, 0.5f, 0.0f,
-        0.5f, -0.5f, 0.0f
+    // 단 이렇게 쓰면 용량이 증가한다. (이미 지나간 부분은 재활용하자.)
+    // float positions[] = {
+    //     // 1st 삼각형
+    //     -0.5f, -0.5f, 0.0f,
+    //     0.5f, -0.5f, 0.0f,
+    //     0.5f, 0.5f, 0.0f,
+    // 
+    //     // 두번째 삼각형
+    //     0.5f, 0.5f, 0.0f,
+    //     -0.5f, 0.5f, 0.0f,
+    //     -0.5f, -0.5f, 0.0f
+    // };
+
+    // 사각형이 지나가는 부분
+    float positions[] = 
+    {
+        -0.5f, -0.5f, 0.0f, // 0
+        0.5f, -0.5f, 0.0f,  // 1
+        0.5f, 0.5f, 0.0f,   // 2
+        -0.5f, 0.5f, 0.0f   // 3
+    };
+
+    // GPU에 보낼 저점의 아이디를 
+    unsigned int indices[] =
+    {
+        0, 1, 2,
+        2, 3, 0
     };
 
     // 하나의 버퍼를 만든다.
     unsigned int buffer;
-    glGenBuffers(1, &buffer);       // 갯수와 객체를 저장할 포인터
+    GLCall(glGenBuffers(1, &buffer));       // 갯수와 객체를 저장할 포인터
     // 위에서 만든 만든 버퍼에 아이디를 준다. (바인딩 시킨다.)
-    glBindBuffer(GL_ARRAY_BUFFER, buffer);
+    GLCall(glBindBuffer(GL_ARRAY_BUFFER, buffer));
     // 버퍼에 보관할 데이터를 가져온다.
     // STREAM은 보통 잘 안 쓰고
     // STATIC이나 DINAMIC이 자주 쓰인다.
-    glBufferData(GL_ARRAY_BUFFER, 9 * sizeof(float), positions, GL_STATIC_DRAW);
+    // 두 개의 삼각형을 만들기 위한 공간을 생성한다.
+    GLCall(glBufferData(GL_ARRAY_BUFFER, 9 * 2 * sizeof(float), positions, GL_STATIC_DRAW));
 
     // 0번째 버퍼를 활성화 한다.
-    glEnableVertexAttribArray(0);                                               
+    GLCall(glEnableVertexAttribArray(0));
 
     /*
     index : 정점 쉐이더의 layout(location=x)에서 x에 해당
@@ -163,7 +212,15 @@ int main(void)
     stribe pointer가 가리키는 배열에서 다음 구성 요소까지의 바이트 수
     pointer : vertex attrib의 배열 주소 const void* 타입으로 지정 가능하다.
     */
-    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(float) * 3, 0);
+    GLCall(glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(float) * 3, 0));
+
+    // 인덱스 버퍼를 만든다.
+    unsigned int indexBuffer;
+    GLCall(glGenBuffers(1, &indexBuffer));
+    // 위에서 만든 만든 버퍼에 아이디를 준다. (바인딩 시킨다.)
+    GLCall(glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, indexBuffer));
+    // 두 개의 삼각형을 만들기 위한 공간을 생성한다.
+    GLCall(glBufferData(GL_ELEMENT_ARRAY_BUFFER, 6 * sizeof(unsigned int), indices, GL_STATIC_DRAW));
 
     // 셰이더 파일을 불러옵니다.
     ShaderProgramSource source = ParseShader("./Basic.shader");
@@ -172,7 +229,7 @@ int main(void)
 
     // 셰이더를 적용하고 사용 선언합니다.
     unsigned int shader = CreateShader(source.vertexSource, source.fragmentSource);
-    glUseProgram(shader);
+    GLCall(glUseProgram(shader));
 
     // 이 데이터들을 어떻게 그릴 것인가에 대해 쓰는 것이 바로 shader이다.
 
@@ -188,7 +245,12 @@ int main(void)
         glClear(GL_COLOR_BUFFER_BIT);
 
         // 버퍼에 있는 데이터를 가져온다.
-        glDrawArrays(GL_TRIANGLES, 0, 3);
+        // 6개의 정점 데이터를 가져온다.
+        // glDrawArrays(GL_TRIANGLES, 0, 3 * 2);
+
+        // 인덱스 버퍼를 이용한 사각형 그리기 
+        // 이 때 GL_UNSIGNED_INT로 해주지 않으면 뜨지 않는다. 왜냐면 unsigned int를 쓰는 버퍼로 되어있기 때문이다.
+        GLCall(glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, nullptr));
 
         /* Swap front and back buffers */
         glfwSwapBuffers(window);
@@ -196,6 +258,8 @@ int main(void)
         /* Poll for and process events */
         glfwPollEvents();
     }
+
+    glDeleteProgram(shader);
 
     glfwTerminate();
     return 0;
