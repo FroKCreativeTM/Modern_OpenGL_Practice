@@ -18,12 +18,18 @@
     </Filter>
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="uniform.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
     <ClCompile Include="main.cpp">
-      <Filter>Resource Files</Filter>
+      <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <None Include="Basic.shader">
+      <Filter>shaders</Filter>
+    </None>
+    <None Include="Uniform.shader">
       <Filter>shaders</Filter>
     </None>
   </ItemGroup>
