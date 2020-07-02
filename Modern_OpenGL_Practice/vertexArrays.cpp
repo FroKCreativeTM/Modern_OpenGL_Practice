@@ -6,10 +6,7 @@
 #include <string>
 #include <sstream>
 
-#define ASSERT(x) if (!(x)) __debugbreak();
-#define GLCall(x) GLClearError();\
-    x;\
-    ASSERT(GLLogCall(#x, __FILE__, __LINE__))
+
 
 /* 셰이더 종류마다 저장할 각 셰이더 소스 클래스입니다. */
 struct ShaderProgramSource
@@ -17,22 +14,6 @@ struct ShaderProgramSource
     std::string vertexSource;
     std::string fragmentSource;
 };
-
-static void GLClearError()
-{
-    while (glGetError() != GL_NO_ERROR);
-}
-
-static bool GLLogCall(const char* function, const char* file, int line)
-{
-    while (GLenum error = glGetError())
-    {
-        std::cout << "[OpenGL Error] (" << error << ")" << function
-            << " " << file << " : " << line << std::endl;
-        return false;
-    }
-    return true;
-}
 
 static ShaderProgramSource ParseShader(const std::string& filepath)
 {
