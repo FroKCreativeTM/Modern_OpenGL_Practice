@@ -1,17 +1,21 @@
+/* OpenGL Graphics header */
 #include <GL/glew.h>
 #include <GLFW/glfw3.h>
 
+/* C/C++ runtime header */
 #include <iostream>
 #include <fstream>
 #include <string>
 #include <sstream>
 
+/* addtional(class) header */
 #include "Renderer.h"
 #include "VertexBuffer.h"
 #include "VertexBufferLayout.h"
 #include "IndexBuffer.h"
 #include "VertexArray.h"
 #include "Shader.h"
+#include "Texture.h"
 
 int main(void)
 {
@@ -51,10 +55,10 @@ int main(void)
     {
         float positions[] =
         {
-            -0.5f, -0.5f,   // 0
-            0.5f, -0.5f,    // 1
-            0.5f, 0.5f,     // 2
-            -0.5f, 0.5f,    // 3
+            -0.5f, -0.5f, 0.0f, 0.0f,   // 0
+            0.5f, -0.5f, 1.0f, 0.0f,    // 1
+            0.5f, 0.5f, 1.0f, 1.0f,     // 2
+            -0.5f, 0.5f, 0.0f, 1.0f     // 3
         };
 
         unsigned int indices[] =
@@ -63,24 +67,32 @@ int main(void)
             2, 3, 0
         };
 
+        // 알파 값에 따른 블렌딩 기능 활성화
+        GLCall(glEnable(GL_BLEND));
+        GLCall(glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA));
+
         // 버텍스 배열 생성
         VertexArray va;
         // 버텍스 버퍼 생성
-        VertexBuffer vb(positions, 4 * 2 * sizeof(positions));
+        VertexBuffer vb(positions, 4 * 4 * sizeof(positions));  // 정점(2) + 텍스처(2)
 
         // 레이아웃 설정
         // 이 때 이 레이아웃은 2D이다.
         VertexBufferLayout layout;
         layout.Push<float>(2);
+        layout.Push<float>(2);      // 텍스처를 위한 레이아웃
         va.AddBuffer(vb, layout);
 
         // 인덱스 버퍼 생성
         IndexBuffer ib(indices, 6);
 
-
-        Shader shader("./shaderFile.shader");
+        Shader shader("./Shader/shaderFile.shader");
         shader.Bind();
         shader.SetUniform4f("u_Color", 0.0f, 1.0f, 1.0f, 1.0f);
+
+        Texture texture("Media/Texture/hideokojima.png");
+        texture.Bind();
+        shader.SetUniform1i("u_Texture", 0); // 텍스처 슬롯이 0이니까 0을 넣는다.
 
         va.Unbind();
         shader.Unbind();           
