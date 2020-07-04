@@ -90,7 +90,7 @@ int main(void)
         shader.Bind();
         shader.SetUniform4f("u_Color", 0.0f, 1.0f, 1.0f, 1.0f);
 
-        Texture texture("Media/Texture/hideokojima.png");
+        Texture texture("Media/Texture/nill.jpg");
         texture.Bind();
         shader.SetUniform1i("u_Texture", 0); // 텍스처 슬롯이 0이니까 0을 넣는다.
 

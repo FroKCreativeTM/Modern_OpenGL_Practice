@@ -29,6 +29,9 @@
     <Image Include="Media\Texture\hideokojima.png">
       <Filter>Texture</Filter>
     </Image>
+    <Image Include="Media\Texture\nill.jpg">
+      <Filter>Texture</Filter>
+    </Image>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\IndexBuffer.h">
