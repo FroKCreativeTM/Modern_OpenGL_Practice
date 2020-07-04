@@ -17,6 +17,10 @@
 #include "Shader.h"
 #include "Texture.h"
 
+/* Graphics math header */
+#include "glm/glm.hpp"
+#include "glm/gtc/matrix_transform.hpp"
+
 int main(void)
 {
     GLFWwindow* window;
@@ -86,9 +90,12 @@ int main(void)
         // 인덱스 버퍼 생성
         IndexBuffer ib(indices, 6);
 
+        glm::mat4 projection = glm::ortho<GLfloat>(-2.0f, 2.0f, -1.5f, 1.5f, -1.0f, 1.0f);
+
         Shader shader("./Shader/shaderFile.shader");
         shader.Bind();
         shader.SetUniform4f("u_Color", 0.0f, 1.0f, 1.0f, 1.0f);
+        shader.SetUniformMat4f("u_MVP", projection);
 
         Texture texture("Media/Texture/nill.jpg");
         texture.Bind();

@@ -3,6 +3,8 @@
 #include <string>
 #include <unordered_map>	// 해시맵
 
+#include "glm/glm.hpp"
+
 /* 셰이더 종류마다 저장할 각 셰이더 소스 클래스입니다. */
 struct ShaderProgramSource
 {
@@ -29,6 +31,7 @@ public :
 	void SetUniform1i(const std::string& name, int value);
 	void SetUniform1f(const std::string& name, float value);
 	void SetUniform4f(const std::string& name, float v0, float v1, float v2, float v3);
+	void SetUniformMat4f(const std::string& name, glm::mat4& matrix);
 private : 
 	ShaderProgramSource ParseShader(const std::string& filepath);
 	unsigned int CompileShader(unsigned int shaderType, const std::string& source);
