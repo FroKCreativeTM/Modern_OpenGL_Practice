@@ -63,11 +63,11 @@ int main(void)
 
     {
         float positions[] =
-        {
-            100.5f, 100.5f, 0.0f, 0.0f,   // 0
-            200.5f, 100.5f, 1.0f, 0.0f,    // 1
-            200.5f, 200.5f, 1.0f, 1.0f,     // 2
-            100.5f, 200.5f, 0.0f, 1.0f     // 3
+        {   // vertex       texcoord
+            -50.0f, -50.0f, 0.0f, 0.0f,   // 0
+            50.0f, -50.0f, 1.0f, 0.0f,    // 1
+            50.0f, 50.0f, 1.0f, 1.0f,     // 2
+            -50.0f, 50.0f, 0.0f, 1.0f     // 3
         };
 
         unsigned int indices[] =
@@ -98,19 +98,15 @@ int main(void)
         // 보통 ortho를 이용해서 2D 공간 카메라를 표현하며
         // perspective를 이용해서 3D 공간을 표현한다.
         // glm::mat4 projection = glm::ortho<float>(-2.0f, 2.0f, -1.5f, 1.5f, -1.0f, 1.0f);
-        glm::mat4 projection    = glm::ortho<float>(0.0f, 1920.0f, 0.0f, 1080.0f, -1.0f, 1.0f);
-        glm::mat4 view          = glm::translate(glm::mat4(1.0f), glm::vec3(-100, 0, 0));       
-        glm::mat4 model         = glm::translate(glm::mat4(1.0f), glm::vec3(200, 200, 0));
         // glm::vec4 vertexPosition(100.0f, 100.f, 0.0f, 1.0f);
         // glm::vec4 result = projection * vertexPosition;
-
-        glm::mat4 mvp = projection * view * model;
+        glm::mat4 projection    = glm::ortho<float>(0.0f, 1920.0f, 0.0f, 1080.0f, -1.0f, 1.0f);
+        glm::mat4 view = glm::translate(glm::mat4(1.0f), glm::vec3(0, 0, 0));
 
         Shader shader("./Shader/shaderFile.shader");
         shader.Bind();
         shader.SetUniform4f("u_Color", 0.0f, 1.0f, 1.0f, 1.0f);
         // shader.SetUniformMat4f("u_MVP", projection);
-        shader.SetUniformMat4f("u_MVP", mvp);
 
         Texture texture("Media/Texture/nill.jpg");
         texture.Bind();
@@ -134,8 +130,13 @@ int main(void)
         bool show_another_window = false;
         ImVec4 clear_color = ImVec4(0.45f, 0.55f, 0.60f, 1.00f);
 
+        /* 셰이더 컬러에 보낼 red 내용 */
         float r = 0.0f;
         float increment = 0.05f;
+
+        /* 셰이더에 보낼 정점의 사이즈 */
+        glm::vec3 translationA(200, 200, 0);
+        glm::vec3 translationB(400, 200, 0);
 
         /* Loop until the user closes the window */
         while (!glfwWindowShouldClose(window))
@@ -148,11 +149,29 @@ int main(void)
             ImGui_ImplGlfw_NewFrame();
             ImGui::NewFrame();
 
+            /* 셰이더에 바인딩한 후 유니폼들을 바꾼다. */
             shader.Bind();
-            shader.SetUniform4f("u_Color", r, 0.0f, 0.5f, 1.0f);
-            
-            /* 렌더러 객체의 그리기 */
-            renderer.Draw(va, ib, shader);
+
+            /* 1번째 그림 */
+            {
+                /* 모델을 조정해서 이를 셰이더 파이프라인에 보낸다. */
+                glm::mat4 model = glm::translate(glm::mat4(1.0f), translationA);
+                glm::mat4 mvp = projection * view * model;
+                // shader.SetUniform4f("u_Color", r, 0.0f, 0.5f, 1.0f); // 컬러
+                shader.SetUniformMat4f("u_MVP", mvp);
+                /* 렌더러 객체의 그리기 */
+                renderer.Draw(va, ib, shader);
+            }    
+            /* 2번째 그림 */
+            {
+                /* 모델을 조정해서 이를 셰이더 파이프라인에 보낸다. */
+                glm::mat4 model = glm::translate(glm::mat4(1.0f), translationB);
+                glm::mat4 mvp = projection * view * model;
+                // shader.SetUniform4f("u_Color", r, 0.0f, 0.5f, 1.0f); // 컬러
+                shader.SetUniformMat4f("u_MVP", mvp);
+                /* 렌더러 객체의 그리기 */
+                renderer.Draw(va, ib, shader);
+            }
 
             if (r > 1.0f)
                 increment = -0.05f;
@@ -162,25 +181,10 @@ int main(void)
             r += increment;
 
             {
-                static float f = 0.0f;
-                static int counter = 0;
-
-                ImGui::Begin("Hello, world!");                          // Create a window called "Hello, world!" and append into it.
-
-                ImGui::Text("This is some useful text.");               // Display some text (you can use a format strings too)
-                ImGui::Checkbox("Demo Window", &show_demo_window);      // Edit bools storing our window open/close state
-                ImGui::Checkbox("Another Window", &show_another_window);
-
-                ImGui::SliderFloat("float", &f, 0.0f, 1.0f);            // Edit 1 float using a slider from 0.0f to 1.0f
+                /* imgui source code */
+                ImGui::SliderFloat3("Translation A", &translationA.x, 0.0f, (1920.0f - 100.0f)); // Edit 1 float using a slider from 0.0f to 1.0f
+                ImGui::SliderFloat3("Translation B", &translationB.x, 0.0f, (1920.0f - 100.0f)); // Edit 1 float using a slider from 0.0f to 1.0f
                 ImGui::ColorEdit3("clear color", (float*)&clear_color); // Edit 3 floats representing a color
-
-                if (ImGui::Button("Button"))                            // Buttons return true when clicked (most widgets return true when edited/activated)
-                    counter++;
-                ImGui::SameLine();
-                ImGui::Text("counter = %d", counter);
-
-                ImGui::Text("Application average %.3f ms/frame (%.1f FPS)", 1000.0f / ImGui::GetIO().Framerate, ImGui::GetIO().Framerate);
-                ImGui::End();
             }
 
             ImGui::Render();

@@ -28,7 +28,7 @@ void Renderer::Draw(const VertexArray& va, const IndexBuffer& ib, const Shader& 
     ib.Bind();
 
     // 다양한 인덱스 타입에 대응할 수 있어야한다. (또한 성능에 대한 고려 또한 필요하다.)
-    GLCall(glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, nullptr));
+    GLCall(glDrawElements(GL_TRIANGLES, ib.GetCount(), GL_UNSIGNED_INT, nullptr));
 }
 
 void Renderer::Clear() const
