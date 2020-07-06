@@ -82,6 +82,12 @@
     <ClInclude Include="src\vendor\imgui\imgui.h">
       <Filter>imgui</Filter>
     </ClInclude>
+    <ClInclude Include="src\tests\Test.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="src\tests\TestClearColor.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="src\Shader.cpp">
@@ -122,6 +128,12 @@
     </ClCompile>
     <ClCompile Include="src\vendor\imgui\imgui_demo.cpp">
       <Filter>imgui</Filter>
+    </ClCompile>
+    <ClCompile Include="src\tests\TestClearColor.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="app.cpp">
+      <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
 </Project>
